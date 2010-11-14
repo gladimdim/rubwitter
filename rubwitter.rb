@@ -2,6 +2,7 @@
 
 require "twitter_oauth"
 require "yaml"
+require "open3"
 twitter_auth_data_file = "#{ENV['HOME']}/.rubwitter_auth"
 
 unless File.exists?(twitter_auth_data_file)
@@ -56,7 +57,9 @@ print "\e[2J"
 until quit_string_array.include?(command) do
 	printf "\e[0;32;40m"
 	print "command> "
-	command = gets.chomp
+	command_raw = gets.chomp
+	command_splitted = command_raw.split(' ')
+	command = command_splitted[0]
 	case command
 	when "twit", "t" 
 		print "Enter twit message: "
@@ -68,16 +71,29 @@ until quit_string_array.include?(command) do
 		print "\e[2J"
 		count = @timeline.count
 		@timeline.each { |e| 
+			time = Time.parse(e['created_at']).strftime("%m/%d%y")# at %H:%M")
+			current_date_time = Time.now
+			date_time_to_show = ""
+			if time.eql? current_date_time
+				date_time_to_show = Time.parse(e['created_at']).strftime("at %H:%M")
+			else
+				date_time_to_show = time
+			end
 			puts "********************"
-			printf "%s\e[37;40m %-20s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], e['text'] 
+			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], date_time_to_show, e['text'] 
 			count = count - 1
 
 		}
 		puts "********************"
 	when "retweet", "re", "r"
-		print "Specify # of tweet to retweet: "
-		retweet_number = gets.chomp
-		client.retweet(@timeline[retweet_number.to_i]['id'].to_i)
+		retweet_number = nil
+		if command_splitted[1] == nil or not command_splitted[1].is_a?(Numeric)
+			print "Specify # of tweet to retweet: "
+			retweet_number = gets.chomp
+		else
+			retweet_number = command_splitted[1].to_i
+		end
+		client.retweet(@timeline[@timeline.count-retweet_number.to_i]['id'].to_i)
 	when "help", "h"
 		print "Available commands: \n"
 		printf "%-30s %s", "timeline, tl, u", "Update your home timeline\n"
@@ -85,6 +101,27 @@ until quit_string_array.include?(command) do
 		printf "%-30s %s", "retweet, re, r", "Retweet tweet\n"
 		printf "%-30s %s", "help, h", "Display this help\n"
 		printf "%-30s %s", "quit, q, :q", "Quit application\n"
+		printf "%-30s %s", "browser, b, br", "Open link for specified #tweet in browser\n"
+	when "browse", "br", "b"
+		twit_number = nil
+		page_to_open = nil
+		if command_splitted[1] == nil or command_splitted[1].to_i == 0
+			
+			print "Specify # of tweet to open in browser\n"
+			twit_number = gets.chomp.to_i
+			if twit_number == 0
+				next	
+			end
+		else twit_number = command_splitted[1].to_i
+		end
+		@timeline[@timeline.count-twit_number.to_i]['text'].split().each { |splitted_twit| page_to_open = splitted_twit if splitted_twit.include?("http://") }
+
+		if page_to_open != nil
+			#value = system("#{ENV['BROWSER']} #{page_to_open} >> /dev/null")
+			Open3.popen3("#{ENV['BROWSER']} #{page_to_open}") # {|stdin, stdout, stderr| puts stdout}
+		else
+			puts "No links found in tweet ##{twit_number}"
+		end
 	end
 
 		
