@@ -6,14 +6,14 @@ require "open3"
 def Rubwitter.show_timeline(list_to_show, from_search = false)
 		count = list_to_show.count
 		list_to_show.each { |e| 
-			#puts e
-			time = Time.parse(e['created_at']).strftime("%m/%d%y")# at %H:%M")
-			current_date_time = Time.now
+			time = Time.parse(e['created_at']).strftime("%m/%d/%y at %H:%M")
+			date_from_response = Time.parse(e["created_at"]).strftime("%m/%d/%y")
+			current_date_time = Time.parse(Time.now.to_s).strftime("%m/%d/%y")
 			date_time_to_show = ""
-			if time.eql? current_date_time
+			if date_from_response.eql? current_date_time
 				date_time_to_show = Time.parse(e['created_at']).strftime("at %H:%M")
 			else
-				date_time_to_show = time
+				date_time_to_show = "#{time}"
 			end
 			puts "********************"
 			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], date_time_to_show, e['text'] if !from_search
@@ -37,6 +37,13 @@ end
 
 twitter_auth_data_file = "#{ENV['HOME']}/.rubwitter_auth"
 
+unless ENV["BROWSER"] != nil
+	puts "Your $BROWSER variable is not set. Do \"export $BROWSER=[path to your browser exec file]\""
+	puts "You can also specify it manually: "
+	browser = gets.chomp
+	ENV["BROWSER"] = browser if browser != ""
+end
+
 unless File.exists?(twitter_auth_data_file)
 
 	client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
@@ -48,7 +55,7 @@ unless File.exists?(twitter_auth_data_file)
 	You need to give authorization for this application. Click ALLOW button in browser. 
 	Then copy returned by twitter 7 digin PIN number. Do not close browser."
 	puts "Press ENTER key to open browser."
-	puts ENV['BROWSER']
+	puts "#{ENV['BROWSER']} will be used to open twitter site"
 	gets
 	value = system("#{ENV['BROWSER']} #{request_token.authorize_url}")
 	puts "Enter returned by twitter 7 digit PIN: "
