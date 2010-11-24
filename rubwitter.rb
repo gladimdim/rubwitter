@@ -1,8 +1,40 @@
 #!/usr/bin/env ruby
-
+module Rubwitter
 require "twitter_oauth"
 require "yaml"
 require "open3"
+def Rubwitter.show_timeline(list_to_show, from_search = false)
+		count = list_to_show.count
+		list_to_show.each { |e| 
+			#puts e
+			time = Time.parse(e['created_at']).strftime("%m/%d%y")# at %H:%M")
+			current_date_time = Time.now
+			date_time_to_show = ""
+			if time.eql? current_date_time
+				date_time_to_show = Time.parse(e['created_at']).strftime("at %H:%M")
+			else
+				date_time_to_show = time
+			end
+			puts "********************"
+			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], date_time_to_show, e['text'] if !from_search
+			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['from_user'], date_time_to_show, e['text'] if from_search
+			
+			count = count - 1
+
+		}
+		puts "********************"
+end
+
+def Rubwitter.isNumeric(string_to_check)
+	begin
+		Float(string_to_check)
+	rescue 
+		return false
+	else
+		return true
+	end
+end
+
 twitter_auth_data_file = "#{ENV['HOME']}/.rubwitter_auth"
 
 unless File.exists?(twitter_auth_data_file)
@@ -69,31 +101,30 @@ until quit_string_array.include?(command) do
 		print "Getting timeline...\n"
 		@timeline = JSON.parse(client.home_timeline().to_json).reverse
 		print "\e[2J"
-		count = @timeline.count
-		@timeline.each { |e| 
-			time = Time.parse(e['created_at']).strftime("%m/%d%y")# at %H:%M")
-			current_date_time = Time.now
-			date_time_to_show = ""
-			if time.eql? current_date_time
-				date_time_to_show = Time.parse(e['created_at']).strftime("at %H:%M")
-			else
-				date_time_to_show = time
-			end
-			puts "********************"
-			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], date_time_to_show, e['text'] 
-			count = count - 1
-
-		}
-		puts "********************"
+		Rubwitter.show_timeline(@timeline)
 	when "retweet", "re", "r"
 		retweet_number = nil
-		if command_splitted[1] == nil or not command_splitted[1].is_a?(Numeric)
-			print "Specify # of tweet to retweet: "
-			retweet_number = gets.chomp
-		else
+		if isNumeric(command_splitted[1]) and command_splitted[1].to_i <= @timeline.count
 			retweet_number = command_splitted[1].to_i
+		else
+			puts "Specify # of tweet to retweet: "
+			value = gets.chomp
+			if not isNumeric(value) or value.to_i > @timeline.count
+				puts "You must enter valid number"
+				next
+			else
+				retweet_number = value
+			end
 		end
-		client.retweet(@timeline[@timeline.count-retweet_number.to_i]['id'].to_i)
+
+
+		response_value = client.retweet(@timeline[@timeline.count-retweet_number.to_i]['id'].to_i) if retweet_number != nil
+		if response_value["errors"] == nil
+			puts "Tweet ##{retweet_number} was retweeted"
+		else
+			puts "Error occurred: #{response_value["errors"]}"
+		end
+
 	when "help", "h"
 		print "Available commands: \n"
 		printf "%-30s %s", "timeline, tl, u", "Update your home timeline\n"
@@ -105,11 +136,12 @@ until quit_string_array.include?(command) do
 	when "browse", "br", "b"
 		twit_number = nil
 		page_to_open = nil
-		if command_splitted[1] == nil or command_splitted[1].to_i == 0
+		if command_splitted[1] == nil or command_splitted[1].to_i == 0 or command_splitted[1].to_i > @timeline.count
 			
 			print "Specify # of tweet to open in browser\n"
 			twit_number = gets.chomp.to_i
-			if twit_number == 0
+			if twit_number == 0 or twit_number > @timeline.count
+				puts "You entered invalid tweet number"
 				next	
 			end
 		else twit_number = command_splitted[1].to_i
@@ -122,8 +154,23 @@ until quit_string_array.include?(command) do
 		else
 			puts "No links found in tweet ##{twit_number}"
 		end
-	end
-
+	when "s", "search", "se"
+		search_string = "" 
+		if command_splitted[1] != nil
+				command_splitted[1..-1].each { |e|
+					search_string = search_string << " " << e
+				}
+			else
+				printf "Specify search string: \n"
+				search_string = gets.chomp
+				next if search_string == ""
+		end
 		
+		@timeline = JSON.parse(client.search(search_string).to_json)["results"]
+		Rubwitter.show_timeline(@timeline, true)
+	end	
+end	
+
 end
+
 
