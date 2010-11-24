@@ -84,14 +84,14 @@ client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
 				  :secret => auth["token_secret"]
 )
 
-puts ENV['BROWSER'] if client.authorized?
+#puts ENV['BROWSER'] if client.authorized?
 
 command = "quit1"
-#puts command == "quit1"
-#until command.eql? "quit" or command.eql? ":q" do
 quit_string_array = ["quit", ":q", "q"]
+#set black background and send escape sequence to clear the screen
 print "\e[33;40m"
 print "\e[2J"
+#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
 @timeline = JSON.parse(client.home_timeline().to_json).reverse
 until quit_string_array.include?(command) do
 	printf "\e[0;32;40m"
@@ -106,6 +106,7 @@ until quit_string_array.include?(command) do
 		client.update(twit) if twit != nil
 	when "timeline", "tl", "u"
 		print "Getting timeline...\n"
+		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
 		@timeline = JSON.parse(client.home_timeline().to_json).reverse
 		print "\e[2J"
 		Rubwitter.show_timeline(@timeline)
@@ -136,10 +137,11 @@ until quit_string_array.include?(command) do
 		print "Available commands: \n"
 		printf "%-30s %s", "timeline, tl, u", "Update your home timeline\n"
 		printf "%-30s %s", "t, tweet", "Write new tweet\n"
-		printf "%-30s %s", "retweet, re, r", "Retweet tweet\n"
+		printf "%-30s %s", "retweet, re, r", "Retweet tweet. You can specify # of tweet as optional parameter\n"
 		printf "%-30s %s", "help, h", "Display this help\n"
 		printf "%-30s %s", "quit, q, :q", "Quit application\n"
-		printf "%-30s %s", "browser, b, br", "Open link for specified #tweet in browser\n"
+		printf "%-30s %s", "browser, b, br", "Open link for specified #tweet in browser. You can specify # of tweet as optional parameter\n"
+		printf "%-30s %s", "search, se, s", "Search for tweets. Second argument is parsed as search string\n"
 	when "browse", "br", "b"
 		twit_number = nil
 		page_to_open = nil
@@ -172,8 +174,8 @@ until quit_string_array.include?(command) do
 				search_string = gets.chomp
 				next if search_string == ""
 		end
-		
-		@timeline = JSON.parse(client.search(search_string).to_json)["results"]
+		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have sequence number==1
+		@timeline = JSON.parse(client.search(search_string).to_json)["results"].reverse
 		Rubwitter.show_timeline(@timeline, true)
 	end	
 end	
