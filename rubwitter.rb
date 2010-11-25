@@ -25,10 +25,6 @@ def Rubwitter.show_timeline(list_to_show, from_search = false)
 		puts "********************"
 end
 
-def Rubwitter.timeline(options = [])
-	args = options.map { |k,v| "#{k}=#{v}"}.join('&')
-	puts args
-end
 def Rubwitter.isNumeric?(string_to_check)
 	begin
 		Float(string_to_check)
@@ -87,8 +83,6 @@ client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
 				  :token => auth["token"],
 				  :secret => auth["token_secret"]
 )
-
-#puts ENV['BROWSER'] if client.authorized?
 
 command = "quit1"
 quit_string_array = ["quit", ":q", "q"]
