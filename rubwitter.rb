@@ -35,6 +35,29 @@ def Rubwitter.isNumeric?(string_to_check)
 	end
 end
 
+def Rubwitter.format_single_argument(question_to_ask)
+	single_argument = ""
+	if @command_splitted[1] == nil
+		puts question_to_ask 
+		single_argument = gets.chomp
+		return single_argument
+	else
+		return single_argument = @command_splitted[1]
+	end
+end	
+def Rubwitter.process_response_value(method_name, options={})
+		response_value = @client.send method_name, options
+		begin
+			error = response_value["error"]
+		rescue
+			@timeline = response_value.reverse
+			Rubwitter.show_timeline(@timeline)
+		else
+			puts "Error occured: #{response_value["error"]}"
+		end
+		
+end
+
 twitter_auth_data_file = "#{ENV['HOME']}/.rubwitter_auth"
 
 unless ENV["BROWSER"] != nil
@@ -46,11 +69,11 @@ end
 
 unless File.exists?(twitter_auth_data_file)
 
-	client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
+	@client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
 					  :consumer_secret => 'vPJKDeiAEcXiQoBvHr8pfRNdFPl3BbY72w7ufCsk'
 	)
 
-	request_token = client.request_token()
+	request_token = @client.request_token()
 	puts "Your browser now will be opened. You will be redirected to twitter site. 
 	You need to give authorization for this application. Click ALLOW button in browser. 
 	Then copy returned by twitter 7 digin PIN number. Do not close browser."
@@ -61,12 +84,12 @@ unless File.exists?(twitter_auth_data_file)
 	puts "Enter returned by twitter 7 digit PIN: "
 	pin = gets.chomp
 	puts "You may now close browser"
-	access_token = client.authorize(
+	access_token = @client.authorize(
 		request_token.token,
 		request_token.secret,
 		:oauth_verifier => pin	
 	)
-	if client.authorized? then
+	if @client.authorized? then
 		printf "%40s\n", "Thanks for using Rubwitter. It was authorized at twitter site. You may now start using it."
 		auth = {} 
 		auth["About"] = "This file contains authorization keys for rubwitter application"
@@ -78,7 +101,7 @@ unless File.exists?(twitter_auth_data_file)
 end
 
 auth = YAML.load(File.open(twitter_auth_data_file))
-client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
+@client = TwitterOAuth::Client.new(:consumer_key => '4hzw6bvfdlcqzJH1jSfgw',
 				  :consumer_secret => 'vPJKDeiAEcXiQoBvHr8pfRNdFPl3BbY72w7ufCsk',
 				  :token => auth["token"],
 				  :secret => auth["token_secret"]
@@ -90,35 +113,35 @@ quit_string_array = ["quit", ":q", "q"]
 print "\e[33;40m"
 print "\e[2J"
 #do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
-@timeline = JSON.parse(client.home_timeline().to_json).reverse
+@timeline = JSON.parse(@client.home_timeline().to_json).reverse
 until quit_string_array.include?(command) do
 	printf "\e[0;32;40m"
 	print "command> "
 	command_raw = gets.chomp
-	command_splitted = command_raw.split(' ')
-	command = command_splitted[0]
+	@command_splitted = command_raw.split(' ')
+	command = @command_splitted[0]
 	case command
 	when "twit", "t", "tweet" 
 		twit = ""
-		if command_splitted[1] == nil
+		if @command_splitted[1] == nil
 			print "Enter twit message: "
 			twit = gets.chomp
 			next if twit == "" 
 		else 
-			command_splitted[1..-1].each {|e| twit = twit << " " << e
+			@command_splitted[1..-1].each {|e| twit = twit << " " << e
 			}
 		end
-		client.update(twit)
+		@client.update(twit)
 	when "timeline", "tl", "u"
 		print "Getting timeline...\n"
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
-		@timeline = JSON.parse(client.home_timeline().to_json).reverse
+		@timeline = JSON.parse(@client.home_timeline().to_json).reverse
 		print "\e[2J"
 		Rubwitter.show_timeline(@timeline)
 	when "retweet", "re", "r"
 		retweet_number = nil
-		if isNumeric?(command_splitted[1]) and command_splitted[1].to_i <= @timeline.count
-			retweet_number = command_splitted[1].to_i
+		if isNumeric?(@command_splitted[1]) and @command_splitted[1].to_i <= @timeline.count
+			retweet_number = @command_splitted[1].to_i
 		else
 			puts "Specify # of tweet to retweet: "
 			value = gets.chomp
@@ -131,7 +154,7 @@ until quit_string_array.include?(command) do
 		end
 
 
-		response_value = client.retweet(@timeline[@timeline.count-retweet_number.to_i]['id'].to_i) if retweet_number != nil
+		response_value = @client.retweet(@timeline[@timeline.count-retweet_number.to_i]['id'].to_i) if retweet_number != nil
 		if response_value["errors"] == nil
 			puts "Tweet ##{retweet_number} was retweeted"
 		else
@@ -150,7 +173,7 @@ until quit_string_array.include?(command) do
 	when "browse", "br", "b"
 		twit_number = nil
 		page_to_open = nil
-		if command_splitted[1] == nil or command_splitted[1].to_i == 0 or command_splitted[1].to_i > @timeline.count
+		if @command_splitted[1] == nil or @command_splitted[1].to_i == 0 or @command_splitted[1].to_i > @timeline.count
 			
 			print "Specify # of tweet to open in browser\n"
 			twit_number = gets.chomp.to_i
@@ -158,7 +181,7 @@ until quit_string_array.include?(command) do
 				puts "You entered invalid tweet number"
 				next	
 			end
-		else twit_number = command_splitted[1].to_i
+		else twit_number = @command_splitted[1].to_i
 		end
 		@timeline[@timeline.count-twit_number.to_i]['text'].split().each { |splitted_twit| page_to_open = splitted_twit if splitted_twit.include?("http://") }
 
@@ -170,8 +193,8 @@ until quit_string_array.include?(command) do
 		end
 	when "s", "search", "se"
 		search_string = "" 
-		if command_splitted[1] != nil
-				command_splitted[1..-1].each { |e|
+		if @command_splitted[1] != nil
+				@command_splitted[1..-1].each { |e|
 					search_string = search_string << " " << e
 				}
 			else
@@ -180,30 +203,35 @@ until quit_string_array.include?(command) do
 				next if search_string == ""
 		end
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have sequence number==1
-		@timeline = JSON.parse(client.search(search_string).to_json)["results"].reverse
+		@timeline = JSON.parse(@client.search(search_string).to_json)["results"].reverse
 		Rubwitter.show_timeline(@timeline, true)
 	when "show", "sh"
-		twitter_username_to_show = ""
-		if command_splitted[1] == nil
-			puts "Specify twitter username: "
-			twitter_username_to_show = gets.chomp
-			next if twitter_username_to_show == ""
-		else
-			twitter_username_to_show = command_splitted[1]
-		end
+		twitter_username_to_show = Rubwitter.format_single_argument("Specify twitter username to show: ")
+	       	next if twitter_username_to_show == ""	
 		options = Hash.new
 		options[:screen_name] = twitter_username_to_show
-		response_value = client.user_timeline(options)
-		begin
-			error = response_value["error"]
-		rescue
-			@timeline = response_value.reverse
-			Rubwitter.show_timeline(@timeline)
+		Rubwitter.process_response_value("user_timeline", options)
+	when "friend", "fr"
+		twitter_friend_to_follow = Rubwitter.format_single_argument("Specify twitter username to follow: ")
+		next if twitter_friend_to_follow == ""	
+		response_value = @client.friend(twitter_friend_to_follow)
+		if response_value["error"] == nil
+			puts "You are now friends with #{twitter_friend_to_follow}"
 		else
-			puts "Error occured: #{response_value["error"]}"
+			puts "Error occurred:#{response_value["error"]}"
+		end
+	when "ufriend", "ufr"
+		twitter_friend_to_unfollow = Rubwitter.format_single_argument("Specify twitter username to unfollow: ")
+		next if twitter_friend_to_unfollow == ""	
+		response_value = @client.unfriend(twitter_friend_to_unfollow)
+		if response_value["error"] == nil
+			puts "You are now not friends with #{twitter_friend_to_unfollow}"
+		else
+			puts "Error occurred:#{response_value["error"]}"
 		end
 
 	end	
+
 
 end	
 
