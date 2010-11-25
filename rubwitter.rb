@@ -25,7 +25,11 @@ def Rubwitter.show_timeline(list_to_show, from_search = false)
 		puts "********************"
 end
 
-def Rubwitter.isNumeric(string_to_check)
+def Rubwitter.timeline(options = [])
+	args = options.map { |k,v| "#{k}=#{v}"}.join('&')
+	puts args
+end
+def Rubwitter.isNumeric?(string_to_check)
 	begin
 		Float(string_to_check)
 	rescue 
@@ -100,10 +104,17 @@ until quit_string_array.include?(command) do
 	command_splitted = command_raw.split(' ')
 	command = command_splitted[0]
 	case command
-	when "twit", "t" 
-		print "Enter twit message: "
-		twit = gets.chomp
-		client.update(twit) if twit != nil
+	when "twit", "t", "tweet" 
+		twit = ""
+		if command_splitted[1] == nil
+			print "Enter twit message: "
+			twit = gets.chomp
+			next if twit == "" 
+		else 
+			command_splitted[1..-1].each {|e| twit = twit << " " << e
+			}
+		end
+		client.update(twit)
 	when "timeline", "tl", "u"
 		print "Getting timeline...\n"
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
@@ -112,7 +123,7 @@ until quit_string_array.include?(command) do
 		Rubwitter.show_timeline(@timeline)
 	when "retweet", "re", "r"
 		retweet_number = nil
-		if isNumeric(command_splitted[1]) and command_splitted[1].to_i <= @timeline.count
+		if isNumeric?(command_splitted[1]) and command_splitted[1].to_i <= @timeline.count
 			retweet_number = command_splitted[1].to_i
 		else
 			puts "Specify # of tweet to retweet: "
@@ -136,7 +147,7 @@ until quit_string_array.include?(command) do
 	when "help", "h"
 		print "Available commands: \n"
 		printf "%-30s %s", "timeline, tl, u", "Update your home timeline\n"
-		printf "%-30s %s", "t, tweet", "Write new tweet\n"
+		printf "%-30s %s", "t, tweet, twit", "Write new tweet\n"
 		printf "%-30s %s", "retweet, re, r", "Retweet tweet. You can specify # of tweet as optional parameter\n"
 		printf "%-30s %s", "help, h", "Display this help\n"
 		printf "%-30s %s", "quit, q, :q", "Quit application\n"
@@ -177,7 +188,29 @@ until quit_string_array.include?(command) do
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have sequence number==1
 		@timeline = JSON.parse(client.search(search_string).to_json)["results"].reverse
 		Rubwitter.show_timeline(@timeline, true)
+	when "show", "sh"
+		twitter_username_to_show = ""
+		if command_splitted[1] == nil
+			puts "Specify twitter username: "
+			twitter_username_to_show = gets.chomp
+			next if twitter_username_to_show == ""
+		else
+			twitter_username_to_show = command_splitted[1]
+		end
+		options = Hash.new
+		options[:screen_name] = twitter_username_to_show
+		response_value = client.user_timeline(options)
+		begin
+			error = response_value["error"]
+		rescue
+			@timeline = response_value.reverse
+			Rubwitter.show_timeline(@timeline)
+		else
+			puts "Error occured: #{response_value["error"]}"
+		end
+
 	end	
+
 end	
 
 end
