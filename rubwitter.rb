@@ -1,29 +1,11 @@
 #!/usr/bin/env ruby
-module Rubwitter
+require "#{File.dirname(__FILE__)}/twitter_utils.rb"
 require "twitter_oauth"
 require "yaml"
 require "open3"
-def Rubwitter.show_timeline(list_to_show, from_search = false)
-		count = list_to_show.count
-		list_to_show.each { |e| 
-			time = Time.parse(e['created_at']).strftime("%m/%d/%y at %H:%M")
-			date_from_response = Time.parse(e["created_at"]).strftime("%m/%d/%y")
-			current_date_time = Time.parse(Time.now.to_s).strftime("%m/%d/%y")
-			date_time_to_show = ""
-			if date_from_response.eql? current_date_time
-				date_time_to_show = Time.parse(e['created_at']).strftime("at %H:%M")
-			else
-				date_time_to_show = "#{time}"
-			end
-			puts "********************"
-			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['user']['screen_name'], date_time_to_show, e['text'] if !from_search
-			printf "%s\e[37;40m %-20s %-17s:\e[33;40m %-30s\n", count.to_s, e['from_user'], date_time_to_show, e['text'] if from_search
-			
-			count = count - 1
+include  Twitter_utils
 
-		}
-		puts "********************"
-end
+module Rubwitter
 
 def Rubwitter.isNumeric?(string_to_check)
 	begin
@@ -35,28 +17,6 @@ def Rubwitter.isNumeric?(string_to_check)
 	end
 end
 
-def Rubwitter.format_single_argument(question_to_ask)
-	single_argument = ""
-	if @command_splitted[1] == nil
-		puts question_to_ask 
-		single_argument = gets.chomp
-		return single_argument
-	else
-		return single_argument = @command_splitted[1]
-	end
-end	
-def Rubwitter.process_response_value(method_name, options={})
-		response_value = @client.send method_name, options
-		begin
-			error = response_value["error"]
-		rescue
-			@timeline = response_value.reverse
-			Rubwitter.show_timeline(@timeline)
-		else
-			puts "Error occured: #{response_value["error"]}"
-		end
-		
-end
 
 twitter_auth_data_file = "#{ENV['HOME']}/.rubwitter_auth"
 
@@ -137,7 +97,7 @@ until quit_string_array.include?(command) do
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
 		@timeline = JSON.parse(@client.home_timeline().to_json).reverse
 		print "\e[2J"
-		Rubwitter.show_timeline(@timeline)
+		show_timeline(@timeline)
 	when "retweet", "re", "r"
 		retweet_number = nil
 		if isNumeric?(@command_splitted[1]) and @command_splitted[1].to_i <= @timeline.count
@@ -204,15 +164,15 @@ until quit_string_array.include?(command) do
 		end
 		#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have sequence number==1
 		@timeline = JSON.parse(@client.search(search_string).to_json)["results"].reverse
-		Rubwitter.show_timeline(@timeline, true)
+		show_timeline(@timeline, true)
 	when "show", "sh"
-		twitter_username_to_show = Rubwitter.format_single_argument("Specify twitter username to show: ")
+		twitter_username_to_show = format_single_argument("Specify twitter username to show: ", @command_splitted[1])
 	       	next if twitter_username_to_show == ""	
 		options = Hash.new
 		options[:screen_name] = twitter_username_to_show
-		Rubwitter.process_response_value("user_timeline", options)
+		process_response_value("user_timeline", options)
 	when "friend", "fr"
-		twitter_friend_to_follow = Rubwitter.format_single_argument("Specify twitter username to follow: ")
+		twitter_friend_to_follow = format_single_argument("Specify twitter username to follow: ", @command_splitted[1])
 		next if twitter_friend_to_follow == ""	
 		response_value = @client.friend(twitter_friend_to_follow)
 		if response_value["error"] == nil
@@ -221,7 +181,7 @@ until quit_string_array.include?(command) do
 			puts "Error occurred:#{response_value["error"]}"
 		end
 	when "ufriend", "ufr"
-		twitter_friend_to_unfollow = Rubwitter.format_single_argument("Specify twitter username to unfollow: ")
+		twitter_friend_to_unfollow = format_single_argument("Specify twitter username to unfollow: ")
 		next if twitter_friend_to_unfollow == ""	
 		response_value = @client.unfriend(twitter_friend_to_unfollow)
 		if response_value["error"] == nil
