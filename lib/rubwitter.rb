@@ -1,4 +1,10 @@
 module Rubwitter
+require "twitter_utils"
+require "utils"
+include Twitter_utils
+include Rubwitter_utils
+
+	
 public
 def Rubwitter.isNumeric?(string_to_check)
 	begin
@@ -9,10 +15,6 @@ def Rubwitter.isNumeric?(string_to_check)
 		return true
 	end
 end
-
-
-
-
 def Rubwitter.start_app()
 	set_browser()
 	set_twitter_data()
@@ -126,4 +128,3 @@ def Rubwitter.start_app()
 	end
 
 end
-
