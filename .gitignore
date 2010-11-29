@@ -1,0 +1,4 @@
+.*.rb.swp
+.*.swp
+*.lock
+*.bundle
