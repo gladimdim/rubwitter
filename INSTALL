@@ -1,0 +1,28 @@
+To install rubwitter follow these steps:
+
+1. cd to rubwitter folder.
+2. Run bundle install - this will install needed gems:
+
+$> gem list --local
+
+*** LOCAL GEMS ***
+
+bundler (1.0.3)
+git (1.2.5)
+jeweler (1.5.1)
+json (1.4.6)
+mime-types (1.16)
+oauth (0.4.4)
+rake (0.8.7)
+rcov (0.9.9)
+rubwitter (0.1.1)
+shoulda (2.11.3)
+twitter_oauth (0.4.3)
+
+3. Run "rake install".
+
+4. Run "rubwitter".
+
+To start using rubwitter type "help" in command line interface.
+
+Have a nice day!
