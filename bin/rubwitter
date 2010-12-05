@@ -6,4 +6,5 @@ RUBWITTER_LIBRARY_PATH = File.dirname(__FILE__)  + "../lib/".to_s
 $:.unshift(RUBWITTER_LIBRARY_PATH)
 require "rubwitter"
 include Rubwitter
+
 Rubwitter.start_app()

@@ -4,6 +4,7 @@ require "utils"
 include Twitter_utils
 include Rubwitter_utils
 
+
 	
 public
 def Rubwitter.isNumeric?(string_to_check)
@@ -18,14 +19,17 @@ end
 def Rubwitter.start_app()
 	set_browser()
 	set_twitter_data()
-		
+	@filter_stream_track_options = "track="
+	@filter_stream_follow_options = "follow="
+	@filter_stream_follow_options_ids = "follow="
+
 	command = "quit1"
 	quit_string_array = ["quit", ":q", "q"]
 	#set black background and send escape sequence to clear the screen
 	print "\e[33;40m"
 	print "\e[2J"
 	#do not forget to reverse each @timeline. This is done because most recent tweet should be shown at the bottom and have #==1
-	@timeline = JSON.parse(@client.home_timeline().to_json).reverse
+	#@timeline = JSON.parse(@client.home_timeline().to_json).reverse
 	until quit_string_array.include?(command) do
 		printf "\e[0;32;40m"
 		print "command> "
@@ -120,6 +124,22 @@ def Rubwitter.start_app()
 			process_friend_unfriend_response(true)
 		when "ufriend", "ufr"
 			process_friend_unfriend_response(false)
+		when "stream"
+			puts "Enter your username: "
+			username = gets.chomp
+			puts "Enter your password: "
+			password = gets.chomp
+			process_filter_follow_options()
+			
+			@filter_stream_options = @filter_stream_track_options << "&" << @filter_stream_follow_options_ids
+			puts @filter_stream_options
+			gets
+			stream_user(username, password, @filter_stream_follow_options_ids)
+		when "track"
+			@filter_stream_track_options = @command_splitted[1]
+		when "follow"
+			@filter_stream_follow_options = @command_splitted[1]
+
 		end	
 
 
