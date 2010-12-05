@@ -125,20 +125,31 @@ def Rubwitter.start_app()
 		when "ufriend", "ufr"
 			process_friend_unfriend_response(false)
 		when "stream"
+			filter_stream_options = ""
 			puts "Enter your username: "
 			username = gets.chomp
 			puts "Enter your password: "
 			password = gets.chomp
-			process_filter_follow_options()
-			
-			@filter_stream_options = @filter_stream_track_options << "&" << @filter_stream_follow_options_ids
-			puts @filter_stream_options
+			if not @filter_stream_follow_options.eql?("follow=")
+				process_filter_follow_options() 
+				filter_stream_options.insert(0, @filter_stream_follow_options_ids)
+			end
+			if not @filter_stream_track_options.eql?("track=")
+				if filter_stream_options.eql?("")
+					filter_stream_options.insert(0, @filter_stream_track_options)
+				else
+					filter_stream_options.insert(-1, '&')
+					filter_stream_options.insert(-1, @filter_stream_track_options)
+				end
+			end
+
+			puts filter_stream_options
 			gets
-			stream_user(username, password, @filter_stream_follow_options_ids)
+			stream_user(username, password, filter_stream_options)
 		when "track"
-			@filter_stream_track_options = @command_splitted[1]
+			@filter_stream_track_options = "track=" << @command_splitted[1] if @command_splitted[1] != nil
 		when "follow"
-			@filter_stream_follow_options = @command_splitted[1]
+			@filter_stream_follow_options = "follow=" <<@command_splitted[1] if @command_splitted[1] != nil 
 
 		end	
 

@@ -22,11 +22,13 @@ def process_filter_follow_options()
 		filter_stream_follow_options_split = @filter_stream_follow_options.split('=')[1].split(',')
 	filter_stream_follow_options_split.each do |follow_screen_names|
 		username_id = @client.show(follow_screen_names)["id"]
+		next if username_id == nil
 		if @filter_stream_follow_options_ids.eql?("follow=")
 			@filter_stream_follow_options_ids << username_id.to_s
 		else
 			@filter_stream_follow_options_ids << "," << username_id.to_s 
 		end
+	end
 	end
 end
 def show_timeline(list_to_show, from_search = false, from_stream=false)
