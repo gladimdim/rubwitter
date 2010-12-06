@@ -11,4 +11,5 @@ group :development do
   gem "jeweler", "~> 1.5.1"
   gem "rcov", ">= 0"
   gem "twitter_oauth", ">=0"
+  gem "yajl-ruby", ">=0"
 end
